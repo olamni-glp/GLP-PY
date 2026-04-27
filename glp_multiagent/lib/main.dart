@@ -371,18 +371,37 @@ class _CoordinatorScreenState extends State<CoordinatorScreen> {
   /// Resolve the GLP repo root from the glp_multiagent working directory.
   /// The app may run from the repo (development) or from a bundle (release).
   static String _resolveRepoRoot() {
-    // In development, cwd is glp_multiagent/ and repo root is ..
-    // Check for the glp_runtime sibling directory as a landmark.
-    final devRoot = Directory.current.parent.path;
-    if (Directory('$devRoot/glp_runtime').existsSync()) {
-      return devRoot;
+    // Walk up from cwd and from the executable's directory looking for the
+    // glp_runtime sibling directory landmark. Handles dev (cwd =
+    // glp_multiagent/), release exe (cwd = build/.../Release/), and macOS
+    // app bundles.
+    Directory? findLandmark(Directory start) {
+      var dir = start;
+      for (var i = 0; i < 12; i++) {
+        if (Directory('${dir.path}${Platform.pathSeparator}glp_runtime')
+            .existsSync()) {
+          return dir;
+        }
+        final parent = dir.parent;
+        if (parent.path == dir.path) return null;
+        dir = parent;
+      }
+      return null;
     }
-    // Fallback: try absolute path (Udi's machine)
+
+    final fromCwd = findLandmark(Directory.current);
+    if (fromCwd != null) return fromCwd.path;
+
+    final exeDir = File(Platform.resolvedExecutable).parent;
+    final fromExe = findLandmark(exeDir);
+    if (fromExe != null) return fromExe.path;
+
+    // Fallback: Udi's macOS path
     const fallback = '/Users/udi/Grassroots/GLP';
     if (Directory('$fallback/glp_runtime').existsSync()) {
       return fallback;
     }
-    return devRoot; // best guess
+    return Directory.current.parent.path; // best guess
   }
 
   Future<void> _runPlay(int playNumber) async {

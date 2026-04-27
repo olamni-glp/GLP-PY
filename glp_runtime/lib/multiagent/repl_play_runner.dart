@@ -191,17 +191,28 @@ class ReplPlayRunner {
   /// Find the dart executable. Prefer the one next to the Flutter SDK,
   /// fall back to PATH.
   String _findDart() {
-    // Check common macOS Flutter/Dart locations
-    final candidates = [
-      '/usr/local/bin/dart',
-      '${Platform.environment['HOME']}/flutter/bin/dart',
-      '${Platform.environment['HOME']}/development/flutter/bin/dart',
-      '${Platform.environment['HOME']}/.pub-cache/bin/dart',
+    final isWindows = Platform.isWindows;
+    final exe = isWindows ? 'dart.bat' : 'dart';
+    final home = Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
+    final candidates = <String>[
+      if (isWindows) ...[
+        '$home\\flutter\\bin\\$exe',
+        '$home\\development\\flutter\\bin\\$exe',
+        'C:\\flutter\\bin\\$exe',
+        'C:\\src\\flutter\\bin\\$exe',
+      ] else ...[
+        '/usr/local/bin/dart',
+        '$home/flutter/bin/dart',
+        '$home/development/flutter/bin/dart',
+        '$home/.pub-cache/bin/dart',
+      ],
     ];
     for (final path in candidates) {
       if (File(path).existsSync()) return path;
     }
     // Fall back to PATH (works from terminal, may not from app bundle)
-    return 'dart';
+    return exe;
   }
 }
