@@ -24,8 +24,8 @@ FriendContent ::= response(Response)
                 ; text(Constant)
                 ; intro(Constant, IntroChannel)
                 ; child_intro(Constant, IntroChannel)
-                ; group_invite(GroupId, Channel)
-                ; group_invite_child(GroupId, Constant, Channel)
+                ; group_invite(GroupId, GroupSetupInviteeChannel)
+                ; group_invite_child(GroupId, Constant, GroupSetupInviteeChannel)
                 ; group_msg(GroupId, Constant, Constant).
 FriendMsg     ::= msg(Constant, Constant, FriendContent).
 FriendStream  ::= [] ; [FriendMsg | FriendStream].
@@ -38,6 +38,16 @@ IntroContent ::= ack(Constant) ; nack.
 IntroStream  ::= [] ; [IntroContent | IntroStream].
 IntroChannel ::= ch(IntroStream, IntroStream?).
 
+%% --- Group setup channel pair (must match typed_social_agent.glp) ---
+GroupContent     ::= group_msg(GroupId, Constant, Constant).
+GroupMsg         ::= msg(Constant, Constant, GroupContent).
+GroupStream      ::= [] ; [GroupMsg | GroupStream].
+GroupChannel     ::= ch(GroupStream, GroupStream?).
+GroupSetupResponse       ::= group_channel(GroupChannel).
+GroupSetupResponseStream ::= [] ; [GroupSetupResponse | GroupSetupResponseStream].
+GroupSetupInviteeChannel ::= ch(GroupSetupResponseStream, IntroStream?).
+GroupSetupCreatorChannel ::= ch(IntroStream, GroupSetupResponseStream?).
+
 %% --- Agent-side content types ---
 
 AgentContent ::= befriend(Constant, Response?)
@@ -47,8 +57,8 @@ AgentContent ::= befriend(Constant, Response?)
                ; rejected
                ; rejected(Constant)
                ; received(Constant, Constant)
-               ; group_invite(GroupId, Channel)
-               ; group_invite_child(GroupId, Constant, Channel)
+               ; group_invite(GroupId, GroupSetupInviteeChannel)
+               ; group_invite_child(GroupId, Constant, GroupSetupInviteeChannel)
                ; group_joined(GroupId)
                ; group_joined_member(GroupId, Constant)
                ; group_left(GroupId)
@@ -125,7 +135,7 @@ UserChannel      ::= ch(UserCmdStream, UserNotifyStream?).
 
 %% --- Pending entries ---
 PendingValue ::= response(Response?) ; channel(IntroChannel)
-               ; group_channel(Channel) ; error.
+               ; group_channel(GroupSetupInviteeChannel) ; error.
 PendingEntry ::= pending(ReqId, PendingValue).
 PendingList  ::= [] ; [PendingEntry | PendingList].
 
