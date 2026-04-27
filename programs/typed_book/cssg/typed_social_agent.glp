@@ -76,12 +76,12 @@ IntroStream  ::= [] ; [IntroContent | IntroStream].
 IntroChannel ::= ch(IntroStream, IntroStream?).
 
 %% Intro result — written by intro_await_peer, injected into UserIn
-IntroResult ::= intro_result(Constant, FriendChannel) ; intro_rejected(Constant).
+IntroResult ::= intro_result(Constant, IntroChannel) ; intro_rejected(Constant).
 
 %% Agent input stream element types
 %% UserIn carries msg/3 (from user and friend responses) and injected IntroResult
 UserInMsg ::= msg(Constant, Constant, UserContent)
-            ; intro_result(Constant, FriendChannel)
+            ; intro_result(Constant, IntroChannel)
             ; intro_rejected(Constant).
 UserInStream ::= [] ; [UserInMsg | UserInStream].
 
@@ -114,7 +114,9 @@ OutputContent ::= befriend(Constant, Response?)
                 ; response(Response)
                 ; text(Constant)
                 ; intro(Constant, IntroChannel)
-                ; child_intro(Constant, IntroChannel).
+                ; child_intro(Constant, IntroChannel)
+                ; unfriend(Constant)
+                ; unfriended(Constant).
 OutputMsg ::= msg(Constant, Constant, OutputContent)
             ; msg(Constant, NetColdCall).
 OutputStream ::= [] ; [OutputMsg | OutputStream].
@@ -214,7 +216,7 @@ remove_output(_, [], []).
 %% Uses generic Channel because after the handshake the channel
 %% transitions from intro protocol to friend messaging protocol.
 
-procedure intro_await_peer(Constant?, Channel(X, Y)?, IntroResult).
+procedure intro_await_peer(Constant?, IntroChannel?, IntroResult).
 
 %% Peer sent ack: write intro_result with the live channel
 intro_await_peer(Other, ch([ack(_)|ChIn], ChOut?),
