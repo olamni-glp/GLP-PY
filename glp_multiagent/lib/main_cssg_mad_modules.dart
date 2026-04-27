@@ -15,6 +15,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
+import 'package:glp_runtime/multiagent/repl_play_runner.dart';
 
 import 'isolate_protocol.dart';
 import 'mad_router.dart';
@@ -23,22 +24,13 @@ import 'mad_router.dart';
 // CONSTANTS
 // =============================================================================
 
-/// Project directory for static linking (repo-relative from glp_multiagent/).
-const _projectDir = '../programs/cssg_modules';
+/// Repo root and absolute paths.
+final _repoRoot = ReplPlayRunner.resolveRepoRoot();
+final _rootSelfGlpPath = '$_repoRoot/programs/self.glp';
+final _projectDir = '$_repoRoot/programs/cssg_modules';
 
 /// madGLP boot source — loaded on top of the linked project.
 const _bootFileName = 'mad_boot.glp';
-
-/// Resolve absolute path to programs/self.glp.
-String _resolveRootSelfGlpPath() {
-  final candidate = File('../programs/self.glp').absolute.path;
-  if (File(candidate).existsSync()) return candidate;
-  const fallback = '/Users/udi/Grassroots/GLP/programs/self.glp';
-  if (File(fallback).existsSync()) return fallback;
-  return candidate;
-}
-
-final _rootSelfGlpPath = _resolveRootSelfGlpPath();
 
 /// Tagged output regex: tagged(alice, cmd(connect(bob)))
 final _taggedRegex = RegExp(r'^tagged\((\w+), (cmd|notify)\((.+)\)\)$');
