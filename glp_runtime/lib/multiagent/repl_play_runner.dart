@@ -101,25 +101,88 @@ class ReplPlayRunner {
 
   ReplPlayRunner({required this.repoRoot, this.glpFiles = cssgFiles});
 
+  /// Walk up from [start] looking for a `glp_runtime` sibling. Returns the
+  /// directory containing it, or null if not found within 12 levels.
+  static String? _findLandmark(Directory start) {
+    var dir = start;
+    for (var i = 0; i < 12; i++) {
+      if (Directory('${dir.path}${Platform.pathSeparator}glp_runtime')
+          .existsSync()) {
+        return dir.path;
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) return null;
+      dir = parent;
+    }
+    return null;
+  }
+
+  /// Resolve the GLP repository root from cwd, then from the executable's
+  /// directory. Use this from any Flutter entry point so dev runs and
+  /// release exes both work.
+  static String resolveRepoRoot() {
+    final fromCwd = _findLandmark(Directory.current);
+    if (fromCwd != null) return fromCwd;
+    final exeDir = File(Platform.resolvedExecutable).parent;
+    final fromExe = _findLandmark(exeDir);
+    if (fromExe != null) return fromExe;
+    const macFallback = '/Users/udi/Grassroots/GLP';
+    if (Directory('$macFallback/glp_runtime').existsSync()) return macFallback;
+    return Directory.current.parent.path;
+  }
+
   bool get isRunning => _process != null;
+
+  static IOSink? _teeSink;
+  static String? _teePath;
+  static void _tee(String label, String line) {
+    final sink = _teeSink;
+    if (sink == null) return;
+    try {
+      sink.writeln('[${DateTime.now().toIso8601String()}] $label $line');
+    } catch (_) {}
+  }
 
   /// Run a simulated play (1, 2, or 3).
   Future<void> run(int playNumber) async {
     final runtimeDir = '$repoRoot/glp_runtime';
     final dartExe = _findDart();
 
-    onLog?.call('REPL: repoRoot=$repoRoot');
-    onLog?.call('REPL: runtimeDir=$runtimeDir');
-    onLog?.call('REPL: dart=$dartExe');
+    final tmp = Platform.environment['TEMP'] ??
+        Platform.environment['TMPDIR'] ??
+        '/tmp';
+    final teePath = '$tmp${Platform.pathSeparator}glp_runner.log';
+    _teePath = teePath;
+    try {
+      _teeSink = File(teePath).openWrite(mode: FileMode.append);
+    } catch (_) {
+      _teeSink = null;
+    }
+    void log(String s) {
+      _tee('LOG', s);
+      onLog?.call(s);
+    }
+    void err(String s) {
+      _tee('ERR', s);
+      onError?.call(s);
+    }
+
+    log('=== run play $playNumber ===');
+    log('REPL: repoRoot=$repoRoot');
+    log('REPL: runtimeDir=$runtimeDir');
+    log('REPL: dart=$dartExe');
+    log('REPL: cwd=${Directory.current.path}');
+    log('REPL: exe=${Platform.resolvedExecutable}');
+    log('REPL: glpFiles=${glpFiles.join(",")}');
 
     // Verify paths before spawning
     if (!Directory(runtimeDir).existsSync()) {
-      onError?.call('Directory not found: $runtimeDir');
+      err('Directory not found: $runtimeDir');
       return;
     }
     final replScript = '$runtimeDir/bin/glp_repl.dart';
     if (!File(replScript).existsSync()) {
-      onError?.call('REPL script not found: $replScript');
+      err('REPL script not found: $replScript');
       return;
     }
 
@@ -128,9 +191,10 @@ class ReplPlayRunner {
         dartExe,
         ['run', 'bin/glp_repl.dart'],
         workingDirectory: runtimeDir,
+        runInShell: Platform.isWindows,
       );
       _process = process;
-      onLog?.call('REPL: process started (pid=${process.pid})');
+      log('REPL: process started (pid=${process.pid})');
 
       // Feed load commands + play goal + quit
       final commands = [
@@ -141,28 +205,38 @@ class ReplPlayRunner {
       process.stdin.writeln(commands);
       await process.stdin.close();
 
-      // Parse stdout
+      // Parse stdout (tee everything)
       process.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen(_parseLine);
+          .listen((line) {
+        _tee('OUT', line);
+        _parseLine(line);
+      });
 
       // Log stderr
       process.stderr
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen((line) {
-        onError?.call('REPL stderr: $line');
+        err('REPL stderr: $line');
       });
 
       // Wait for exit
       final exitCode = await process.exitCode;
       _process = null;
-      onLog?.call('REPL: exited with code $exitCode');
+      log('REPL: exited with code $exitCode');
       onDone?.call(exitCode);
-    } catch (e) {
+    } catch (e, st) {
       _process = null;
-      onError?.call('REPL: failed to start: $e');
+      err('REPL: failed to start: $e');
+      _tee('ERR', 'stack: $st');
+    } finally {
+      try {
+        await _teeSink?.flush();
+        await _teeSink?.close();
+      } catch (_) {}
+      _teeSink = null;
     }
   }
 

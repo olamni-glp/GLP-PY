@@ -125,17 +125,7 @@ class _CssgGroupsScreenState extends State<CssgGroupsScreen> {
   }
 
   /// Resolve the GLP repo root.
-  static String _resolveRepoRoot() {
-    final devRoot = Directory.current.parent.path;
-    if (Directory('$devRoot/glp_runtime').existsSync()) {
-      return devRoot;
-    }
-    const fallback = '/Users/udi/Grassroots/GLP';
-    if (Directory('$fallback/glp_runtime').existsSync()) {
-      return fallback;
-    }
-    return devRoot;
-  }
+  static String _resolveRepoRoot() => ReplPlayRunner.resolveRepoRoot();
 
   Future<void> _runPlay() async {
     // Kill previous run
