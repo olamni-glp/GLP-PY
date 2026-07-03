@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-07-03T00:14:43.634349+00:00",
+  "actor": "claude-opus-4-8 (/bk-marathon mrun-4537a258b419 deploy)",
+  "source_buildkit": "D:/bstdev/research/buildkit",
+  "deploy": {
+    "schema_version": "1",
+    "action": "deploy",
+    "outcome": "deployed",
+    "migrated": 1,
+    "target": {
+      "canonical_path": "D:\\BSTDEV\\glp\\GLP-PY",
+      "pinned_version": "v2026.07.03.1",
+      "status": "active",
+      "store_dir": "C:\\Users\\smbuser\\AppData\\Local\\buildkit\\deploy-home\\targets\\8737cddf6a57"
+    },
+    "home": {
+      "home_path": "C:\\Users\\smbuser\\AppData\\Local\\buildkit\\deploy-home",
+      "format_version": 1
+    },
+    "installed_version": {
+      "version": "v2026.07.03.1",
+      "integrity_ok": true
+    },
+    "evolution": {
+      "to_tag": "v2026.07.03.1",
+      "applied": [
+        "01KWJ4GTJNAMZ3STJV0MTCM2JF"
+      ],
+      "roadmap_crdt_applied": true,
+      "halted_at": null
+    }
+  }
+}
