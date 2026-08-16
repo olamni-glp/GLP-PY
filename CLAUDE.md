@@ -1277,3 +1277,8 @@ Never ask Udi closed-form questions (multiple choice, yes/no, pick-from-list). O
 2. **NEVER revert, reset, or undo commits without Udi's express permission.** If you believe a revert is needed, STOP and explain why. Do not use `git reset`, `git revert`, `git checkout -- <file>`, or `git restore` on any file you did not modify in this session. If you need to undo your own change from this session, that is acceptable — but undoing anyone else's work requires permission.
 
 3. **If you encounter merge conflicts or unexpected changes from other sessions**, STOP and report to Udi. Do not resolve conflicts silently — the other session's work may be more recent and important.
+
+<!-- BUILDKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- BUILDKIT END -->

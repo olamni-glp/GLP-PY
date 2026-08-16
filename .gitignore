@@ -3,3 +3,6 @@ glp_runtime/build/
 .DS_Store
 .specify/.deploy-migrated
 .specify/deploy-ledger.jsonl
+
+# operational PGlite catalog - machine-local, never committed (fleet convention)
+pgdb/
